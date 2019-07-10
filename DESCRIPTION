@@ -1,0 +1,17 @@
+Package: goi.tcga
+Type: Package
+Title: Loads expression values for genes of interest from a TCGA SummarizedExperiment object
+Version: 0.0.0.9000
+Authors@R: person("Eric", "Koncina", email = "eric.koncina@uni.lu", role = c("aut", "cre"))
+Description: Load genes of interest expression values from a TCGA SummarizedExperiment object as
+    a tidy data frame and handle TCGA barcodes.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: dplyr,
+  geneid,
+  rlang,
+  stringr,
+  SummarizedExperiment,
+  tidyr
+RoxygenNote: 6.1.1
