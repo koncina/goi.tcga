@@ -17,20 +17,24 @@ NULL
 separate_barcode <- function(data, col = barcode, remove = TRUE) {
   col <- quo_name(enquo(col))
   barcode <- data[[col]]
-  
+
   n_elts <- unique(str_count(barcode, "-")) + 1
   if (length(n_elts) != 1) stop("all barcodes should be of same length")
-  
-  barcode_regex <- c("^TCGA", "\\w{2}", "\\w{4}", "\\d{2}[A-Z]", "\\d{2}[A-Z]", "\\w{4}", "\\d{2}")
+
+  barcode_regex <- c("^TCGA", "\\w{2}", "\\w{4}", "\\d{2}[A-Z]", "\\d{2}[A-Z]?", "\\w{4}", "\\d{2}")
   barcode_regex <- paste0(paste(barcode_regex[1:n_elts], collapse = "-"), "$")
   valid_barcode <- str_detect(barcode, barcode_regex)
   if (!all(valid_barcode)) stop("invalid barcode found: ", glue_collapse(barcode[!valid_barcode], sep = ", "))
-  
-  into <- c("project", "tss", "participant", "sample_vial", "portion_analyte", "plate", "center")
+
+  into <- c(".project", "tss", "participant", "sample_vial", "portion_analyte", "plate", "center")
+
+  if (any(into %in% colnames(data))) stop(colnames(data)[colnames(data) %in% into], " column already exists")
+
   data <- separate(data, col, into[1:n_elts], sep = "-", remove = remove, fill = "right")
   if (n_elts > 3) data <- separate(data, "sample_vial", c("sample", "vial"), 2)
   if (n_elts > 4) data <- separate(data, "portion_analyte", c("portion", "analyte"), 2)
-  select(data, -"project")
+  data <- mutate_at(data, "analyte", str_replace, "^$", NA_character_)
+  select(data, -".project")
 }
 
 #' Get the expression values out of the TCGA SummarizedExperiment object
@@ -49,13 +53,13 @@ get_tcga_goi <- function (data, goi, ...) {
 
 
 #' @rdname get_tcga_goi
-#' 
+#'
 #' @importFrom SummarizedExperiment assay
 #' @importFrom tidyr gather
 #' @importFrom stringr str_detect
 #' @importFrom dplyr filter
 #' @importFrom geneid ensgid_to_gene_symbol
-#' 
+#'
 #' @method get_tcga_goi RangedSummarizedExperiment
 #' @export
 get_tcga_goi.RangedSummarizedExperiment <- function(data, goi, ...) {
@@ -70,9 +74,9 @@ get_tcga_goi.RangedSummarizedExperiment <- function(data, goi, ...) {
 }
 
 #' @rdname get_tcga_goi
-#' 
+#'
 #' @param element Index of name of the list element to use.
-#' 
+#'
 #' @method get_tcga_goi list
 #' @export
 get_tcga_goi.list <- function(data, goi, element = 1, ...) {
@@ -81,7 +85,7 @@ get_tcga_goi.list <- function(data, goi, element = 1, ...) {
 }
 
 #' @rdname get_tcga_goi
-#' 
+#'
 #' @method get_tcga_goi character
 #' @export
 get_tcga_goi.character <- function(data, goi, ...) {
